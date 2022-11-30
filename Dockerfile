@@ -1,23 +1,33 @@
-# Pull ruby image
-FROM ruby:5.1.6
+# ベースイメージを指定
+FROM ruby:3.0.5
 
-# Install 
-RUN apt-get update -qq && \
-    apt-get install -y build-essential \ 
-                       libpq-dev \        
-                       nodejs           
+# railsに必要なnodejsとpostgeqsqlをインストール
+RUN apt-get update -qq && apt-get install -y nodejs postgresql-client
 
-# Create working directory
-ENV APP_ROOT /rails_tutorial
-RUN mkdir $APP_ROOT
+# yarnパッケージ管理ツールをインストール
+RUN apt-get update && apt-get install -y curl apt-transport-https wget && \
+curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - && \
+echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list && \
+apt-get update && apt-get install -y yarn
+# Node.jsをインストール
+RUN curl -sL https://deb.nodesource.com/setup_7.x | bash - && \
+apt-get install nodejs
 
-# Set working directory as APP_ROOT
-WORKDIR $APP_ROOT
+# ディレクトリ・ファイルの作成
+RUN mkdir /hello_app
+WORKDIR /hello_app
+ADD Gemfile /hello_app/Gemfile
+ADD Gemfile.lock /hello_app/Gemfile.lock
 
-# Add Gemfile
-ADD ./Gemfile $APP_ROOT/Gemfile
-ADD ./Gemfile.lock $APP_ROOT/Gemfile.lock
-
-# Install Gemfile's bundle
+# Railsに必要なGemのインストール
 RUN bundle install
-ADD . $APP_ROOT
+COPY . /hello_app
+
+# Add a script to be executed every time the container starts.
+COPY entrypoint.sh /usr/bin/
+RUN chmod +x /usr/bin/entrypoint.sh
+ENTRYPOINT ["entrypoint.sh"]
+EXPOSE 3000
+
+# railsを起動
+CMD ["rails", "server", "-b", "0.0.0.0"]

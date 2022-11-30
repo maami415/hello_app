@@ -1,18 +1,18 @@
 version: '3'
 services:
-  sqlite3:
-    image: sqlite3:1.4
-    stdin_open: true
-    tty: true
+  db:
+    image: postgres
+    container_name: hello-app-db
     volumes:
-      - .:/rails_tutorial
+      - ./tmp/db:/var/lib/postgresql/data
 
   web:
     build: .
-    command: /bin/sh #-c "rm -f tmp/pids/server.pid"
-    stdin_open: true
-    tty: true
+    container_name: hello-app-web
+    command: bash -c "rm -f tmp/pids/server.pid && rails s -p 3000 -b '0.0.0.0'"
+    volumes:
+      - .:/hello_app
+    ports:
+      - "3000:3000"
     depends_on:
       - db
-    volumes:
-      - .:/rails_tutorial
